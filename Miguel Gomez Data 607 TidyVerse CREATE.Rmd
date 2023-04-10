@@ -1,0 +1,208 @@
+---
+title: "Tidyverse CREATE"
+author: "Miguel Gomez"
+date: "04-07-2023"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(reactable)
+library(janitor)
+```
+
+---<font size="4"> 
+Due to the ongoing climate surrounding police interactions with civilians, I decided to review the article  "Where Police Have Killed Americans In 2015" by Ben Casselman. This articles focuses on the demographic and economic information of the neighborhoods where these police killings occurred. 
+
+Link:https://fivethirtyeight.com/features/where-police-have-killed-americans-in-2015/
+
+---
+
+---<font size="5"> 
+
+Pulling Data
+
+---
+
+```{r}
+data1<-read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/police-killings/police_killings.csv")
+head(data1)
+```
+
+```{r}
+data2 <- as.data.frame(data1)
+glimpse(data2)
+```
+
+
+---<font size="5"> 
+
+Selecting ethnicity data
+---
+
+```{r}
+raceethnicitycounts <- table(data2$raceethnicity) 
+```
+
+---<font size="5"> 
+
+Counts how many times each ethnicity  shows up
+---
+
+```{r}
+raceethnicitycounts
+```
+
+---<font size="5"> 
+
+Labels for ethnicities
+---
+
+```{r}
+raceethnicitycountslabels <- c("Asian/Pacific Islander", "Black", "Hispanic/Latino", "Native American",  "Unknown",  "White")
+```
+
+---<font size="5"> 
+
+Calculates ethnicity counts percentages
+---
+
+
+```{r}
+raceethnicitycountsratio <- raceethnicitycounts/sum(raceethnicitycounts)
+```
+
+---<font size="5"> 
+
+Converts ethnicity counts to percentages
+---
+
+```{r}
+pct <- round(raceethnicitycountsratio/sum(raceethnicitycountsratio)*100)
+```
+
+---<font size="5"> 
+
+Adds percentages to labels
+---
+```{r}
+raceethnicitycountslabels <- paste(raceethnicitycountslabels, pct)
+```
+
+---<font size="5"> 
+
+Adds % to labels
+---
+
+```{r}
+raceethnicitycountslabels  <- paste(raceethnicitycountslabels, "%", sep="")
+
+```
+
+---<font size="5"> 
+This graph breaks down the people killed by ethnicity.
+---
+```{r}
+barplot(pct, horiz=T, xlim = c(0,50) ,las=1,  main = "2015 Police Killings by Ethnicity", xlab= "Ethnicity",  cex.names=.5)
+```
+
+---<font size="5"> 
+
+Counts how many times each weapon shows up
+
+---
+
+```{r}
+
+weaponcounts<- table(data2$armed)
+
+```
+
+---<font size="5"> 
+
+Calculates weapon counts percentages
+---
+
+```{r}
+weaponratios <- weaponcounts/sum(weaponcounts)
+
+```
+
+---<font size="5"> 
+
+Converts weapon counts to percentages
+---
+
+```{r}
+pct2 <- round(weaponratios/sum(weaponratios)*100) 
+
+```
+ 
+```{r}
+
+barplot(pct2, horiz=T, xlim = c(0,50) ,las=1,  main = "Weapons people killed by police were armed with", xlab= "Number of People Armed",  cex.names=.5)
+ 
+```
+
+---<font size="5"> 
+
+In addition, I added a bar plot that shows what weapons the people killed by the police were armed with. 
+---
+
+---
+<font size="5"> 
+Using dplyr’s distinct() 4 function, we can see the list of all states in the dataset. There are 47 states.
+
+---
+
+```{r}
+data2 %>% 
+  distinct(state) %>% 
+  reactable(bordered = TRUE, striped = TRUE,
+          highlight = TRUE, filterable = TRUE,  showPageSizeOptions = TRUE,
+          showPagination = TRUE, pageSizeOptions = c(5, 10, 20),
+          defaultPageSize = 5)
+
+```
+---
+<font size="5"> 
+I used janitor’s tabyl() function to count how often each state and law enforcement agency shows up. tabyl also calculates the percentage.
+---
+
+```{r}
+data3<-tabyl(data2, state)
+data3 %>% 
+  arrange(desc(n))
+reactable(data3,bordered = TRUE, striped = TRUE,
+          highlight = TRUE, filterable = TRUE,  showPageSizeOptions = TRUE,
+          showPagination = TRUE, pageSizeOptions = c(10, 25,50),
+          defaultPageSize = 10)
+
+
+```
+
+```{r}
+data4<-tabyl(data2, lawenforcementagency)
+data4 %>% 
+  arrange(desc(n))
+reactable(data3,bordered = TRUE, striped = TRUE,
+          highlight = TRUE, filterable = TRUE,  showPageSizeOptions = TRUE,
+          showPagination = TRUE, pageSizeOptions = c(10, 25,50),
+          defaultPageSize = 10)
+```
+
+
+---
+<font size="5"> 
+Here's a graph of the data I calculated above.
+---
+
+```{r, fig.width=10, fig.height=15}
+p <- ggplot(data3, aes(x=fct_rev(state), y=n))+
+    geom_bar(stat="identity")+ coord_flip()
+p
+```
+
+---
+<font size="5"> 
+In conclusion, California was in 1st with 74 people killed by police in 2015 while Texas came in second with 46 (Los Angeles Police Department also came in 1st with the most people killed by a Law Enforcement Agency). The Weapon the people killed by police were mostly armed with was a firearm. In addition, even though majority of the police killings occurred in neighborhoods that are poorer and blacker, 51% of the people killed were white. To build on this analysis, I would focus on the data we have on income.
+---
