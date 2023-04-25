@@ -1,0 +1,196 @@
+---
+title: "Tidyverse extend"
+author: "Miguel Gomez"
+date: "2023-04-25"
+output: html_document
+---
+
+```{r load-packages}
+library(tidyverse)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### TidyVerse Assignment: Collaborating Around a Code Project with GitHub.
+
+I'm extending Gregg Maloy's Tidyverse example with additional code
+
+#
+
+## {.tabset}
+### Part 1: assignment 
+In this assignment, you’ll practice collaborating around a code project with 
+GitHub.  Using one or more TidyVerse packages, and any dataset from fivethirtyeight.com
+or Kaggle, create a programming sample “vignette” that demonstrates how to use one or
+more of the capabilities of the selected TidyVerse package with your selected dataset.
+
+For this assignment dplyr was utilized to conduct a superficial analysis of the 'Music
+Dataset : 1950 to 2019' which provides a list of songs 'from 1950 to 2019 describing
+music metadata as sadness, danceability, loudness, acousticness, etc.'  More
+specifically, dplyr was used to analyze aspects of the 'sadness' variable to demonstrate
+the main functions of the dplyr package.  The final product is a playlist of songs between the years 1950-2019 which includes the top one 'saddest' song from each year.  
+
+This dataset is available via Kaggle: 
+https://www.kaggle.com/datasets/saurabhshahane/music-dataset-1950-to-2019?resource=downoad    
+
+\newpage    
+### Part 2: dataset/package
+Below the dataset is read into R from a github repository and dplyr package loaded.
+```{r}
+suppressWarnings(suppressMessages(library(dplyr)))
+sad<- read.csv("https://raw.githubusercontent.com/greggmaloy/Data607_R/main/20230406_MUSIC.csv", na.strings=c("","NA"))
+glimpse(sad)
+```
+\newpage
+### Part 3: select() 
+The select() function is used to select variables by name and index number.
+Select() also allows the variable to be renamed.
+The below code produces a new data frame, sadder_df, which consists of four variables and is a subset of the larger dataframe 'sad'.
+```{r}
+sadder_df<-sad %>% select(2,3,4,22) 
+sadder_df %>% slice(1:5)
+```
+\newpage
+### Part 4: arrange() 
+The arrange() function sorts rows in the dataframe via values of referenced
+columns. Below the 'sadness' variable is sorted in descending order.  The song 'fading' by decyfer down is the song with the highest 'sadness' score in the entire dataset.
+```{r}
+saddest_song<-sadder_df %>%arrange(desc(sadness))
+saddest_song %>% slice(1:5)
+```
+\newpage
+### Part 5: filter() 
+The filter() function is used to subset rows based on a reference value.
+Below the dataframe is filtered to songs from the year '1976' and subsequently arrange by the sadness score to produce the dataframe 'saddest_song_1976'. The song 'why must i cry' by Peter Tosh is the song with the highest 'sadness' score in 1976.
+```{r}
+#unique(sad$genre)
+saddest_song_1976<-sadder_df%>% 
+  filter(release_date %in% c('1976')) %>% 
+  arrange(desc(sadness))
+saddest_song_1976 %>% slice(1:5)
+```
+
+
+\newpage
+### Part 6: group_by() 
+The group_by() function is used to group rows by referenced columns.  Below the group_by() function is used to create a dataframe, saddest_song, which groups each row(song) by release date and then arranges in descending order by the variable 'sadness'.  Finally the slice() function grabs the top row of each group_by.  The end result is a dataframe which consists of the song with the largest 'sadness' score for each year.
+```{r}
+saddest_song<-sadder_df%>%
+  group_by (release_date)%>%
+  arrange(desc(sadness))%>%
+  slice(1)
+saddest_song %>% slice(1:5)
+```
+\newpage
+### Part 7: summarize()
+Below the summarzie() function is introduced. The summarise() function returns one row for 'each combination of grouping variables' (https://dplyr.tidyverse.org/reference/summarise.html).
+Below summarise(), group_by() and arrange_by() functions are used to 1. create a variable, sadness_agg, which aggregates the 'sadness' variable, 2. groups 'sadness_agg' by 'release_date' so that each year has a sadness score based on the 'sadness_agg variable, and 3. arranges the 'release_date' variable in descending order so the first row represents the year with the highest aggregated sadness score. The year 1981 is the year with the highest aggregated sadness score of 78.6.
+```{r}
+saddest_year<-sadder_df%>% 
+  group_by (release_date) %>% 
+  summarise(sadness_agg=sum(sadness))%>% 
+  arrange(desc(sadness_agg))
+saddest_year %>% slice(1:5)
+```
+\newpage
+### Part 8: mutate() 
+The mutate() function facilitates variable creation.   
+Below a new variable, rank_sadness_year, is created which ranks the year with regard to the aggregated 'sadness_agg' variable.  The year 1981 is the year with the highest aggregated 'sadness' value and is thus assigned the rank value of '1'.
+```{r}
+saddest_year_rank<-sadder_df%>% 
+  group_by (release_date) %>% 
+  summarise(sadness_agg=sum(sadness))%>% 
+  arrange(desc(sadness_agg))%>% 
+  mutate(rank_sadness_year = row_number())
+saddest_year_rank %>% slice(1:5)
+```
+\newpage
+### Part 9: SQL join 
+Dplyr can also perform SQL left joins. Below the table 'saddest_year_rank', which was created in part 8, is left joined to the saddest_song dataframe to append the column 'saddest_year_rank' to the saddest_song dataframe.  The end result is a list/potential playlist of the saddest songs for each year between the years 1950-2019 with an additional column appended 'rank' which ranks the song's release_year in terms of 'sadness' compared to other years.
+```{r}
+final<-saddest_song %>% left_join(saddest_year_rank, by=c('release_date'))%>% select(1,2,3,6) 
+final %>% slice(1:5)
+```
+\newpage
+### Part 10: conclusion
+Dplyr functions are a powerful tool for data manipulation.
+Below is the final palylist
+```{r}
+final
+```
+\newpage
+### Part 11: Miguel's extend
+I'm going to focus on violent songs.
+
+```{r}
+suppressWarnings(suppressMessages(library(dplyr)))
+violent<- read.csv("https://raw.githubusercontent.com/greggmaloy/Data607_R/main/20230406_MUSIC.csv", na.strings=c("","NA"))
+glimpse(violent)
+```
+
+\newpage
+### Part 12: Violent select() 
+
+```{r}
+violentdf<-violent %>% select(2,3,4,9) 
+violentdf %>% slice(1:5)
+```
+\newpage
+### Part 13: Violent arrange() 
+```{r}
+violent_song<-violentdf %>%arrange(desc(violence))
+violent_song %>% slice(1:5)
+```
+\newpage
+### Part 14: Violent filter() 
+```{r}
+#unique(violence$genre)
+most_violent_song_1976<-violentdf%>% 
+  filter(release_date %in% c('1976')) %>% 
+  arrange(desc(violence))
+most_violent_song_1976 %>% slice(1:5)
+```
+\newpage
+### Part 15: Violent group_by() 
+```{r}
+most_violent_song<-violentdf%>%
+  group_by (release_date)%>%
+  arrange(desc(violence))%>%
+  slice(1)
+most_violent_song %>% slice(1:5)
+```
+\newpage
+### Part 16: Violent summarize()
+```{r}
+most_violent_year<-violentdf%>% 
+  group_by (release_date) %>% 
+  summarise(violence_agg=sum(violence))%>% 
+  arrange(desc(violence_agg))
+most_violent_year %>% slice(1:5)
+```
+\newpage
+### Part 17: Violent mutate() 
+```{r}
+most_violent_year_rank<-violentdf%>% 
+  group_by (release_date) %>% 
+  summarise(violence_agg=sum(violence))%>% 
+  arrange(desc(violence_agg))%>% 
+  mutate(most_violent_year_rank = row_number())
+most_violent_year_rank %>% slice(1:5)
+```
+\newpage
+### Part 18: Violent SQL join  
+```{r}
+final2<-most_violent_song %>% left_join(most_violent_year_rank, by=c('release_date'))%>% select(1,2,3,6) 
+final2 %>% slice(1:5)
+```
+\newpage
+### Part 19: Miguel's conclusion
+```{r}
+final2
+```
+Some interesting takeaways comparing the violentdf and sadder_df data datasets. 
+
+- The year with the highest violence score was 1999 while the year with the highest saddest score was 2009. 
